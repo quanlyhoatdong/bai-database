@@ -34,7 +34,7 @@
     </div>
 
     <script>
-        // ⚠️ CHÚ Ý: Thay thông số chính xác từ Project Supabase của bạn vào đây
+        // Thông số cấu hình Project Supabase của bạn
         const SUPABASE_URL = 'https://fcxwvevbsvzectiaacmb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjeHd2ZXZic3Z6ZWN0aWFhY21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTAzMDksImV4cCI6MjA5NTQ4NjMwOX0._380dtxl812Uq6ZgGM_mM0yjLVyhp7g205wuRnlwa_g';
         
@@ -50,7 +50,8 @@
             const { data, error } = await _supabase
                 .from('todos')
                 .select('*')
-                .order('id', { ascending: true });
+                // Vì id của bạn dùng dạng UUID (chuỗi chữ và số), ta sắp xếp theo thời gian tạo tự động của hệ thống
+                .order('created_at', { ascending: true });
 
             if (error) {
                 console.error('Lỗi khi lấy dữ liệu:', error);
@@ -68,9 +69,14 @@
             data.forEach(todo => {
                 const li = document.createElement('li');
                 li.className = "flex items-center justify-between bg-slate-900/60 border border-slate-700/50 p-4 rounded-xl";
+                
+                // ĐÃ SỬA: Thay thế toàn bộ biến todo.is_completed cũ bằng todo.status
                 li.innerHTML = `
-                    <span class="text-slate-200 ${todo.is_completed ? 'line-through text-slate-500' : ''}">${todo.title}</span>
-                    <button onclick="deleteTodo(${todo.id})" class="text-red-400 hover:text-red-500 p-1 cursor-pointer transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="text-slate-200">${todo.title}</span>
+                        <span class="text-xs bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-medium">${todo.status}</span>
+                    </div>
+                    <button onclick="deleteTodo('${todo.id}')" class="text-red-400 hover:text-red-500 p-1 cursor-pointer transition-colors">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
@@ -83,14 +89,15 @@
             const title = todoInput.value.trim();
             if (!title) return;
 			
-			const { error } = await _supabase
-				.from('todos')
-				.insert([{ title: title, status: "Mới" }]); // Đổi thành 'status' theo đúng đề bài
+            const { error } = await _supabase
+                .from('todos')
+                .insert([{ title: title, status: "Mới" }]);
+
             if (error) {
                 alert('Lỗi khi thêm: ' + error.message);
             } else {
                 todoInput.value = '';
-                fetchTodos(); // Load lại danh sách sau khi thêm
+                fetchTodos(); // Load lại danh sách sau khi thêm thành công
             }
         }
 
@@ -104,7 +111,7 @@
             if (error) {
                 alert('Lỗi khi xóa: ' + error.message);
             } else {
-                fetchTodos(); // Load lại danh sách sau khi xóa
+                fetchTodos(); // Load lại danh sách sau khi xóa thành công
             }
         }
 
