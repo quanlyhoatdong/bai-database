@@ -3,126 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Cloud - Todo App</title>
+    <title>Supabase Cloud - Todo App Nâng Cấp</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between p-6">
 
-    <div class="max-w-xl mx-auto w-full my-auto">
+    <div class="max-w-2xl mx-auto w-full my-auto">
         <a href="index.html" class="text-sm text-sky-400 hover:underline mb-6 inline-block">
             <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại Dashboard
         </a>
 
         <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl">
             <h1 class="text-xl font-bold text-sky-400 mb-6 border-b border-slate-700 pb-3 flex items-center gap-2">
-                <i class="fa-solid fa-list-check"></i> Việc Cần Làm Hôm Nay (Dữ liệu đám mây Supabase)
+                <i class="fa-solid fa-database"></i> Quản Lý Công Việc Song Song (Supabase Cloud)
             </h1>
 
-            <div class="flex gap-2 mb-6">
+            <div class="flex gap-2 mb-8">
                 <input type="text" id="todo-input" placeholder="Nhập việc cần làm..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-sky-500 transition-colors">
                 <button id="btn-add" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-5 rounded-xl transition-all cursor-pointer shadow-lg shadow-sky-500/10">
-                    <i class="fa-solid fa-plus"></i> Thêm
+                    <i class="fa-solid fa-plus"></i> Thêm việc
                 </button>
             </div>
 
-            <ul id="todo-list" class="space-y-3 max-h-80 overflow-y-auto pr-1">
-                <li class="text-center text-slate-500 text-sm py-4">Đang đồng bộ dữ liệu với Cloud...</li>
-            </ul>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="bg-slate-900/40 border border-slate-700/60 p-4 rounded-xl">
+                    <h2 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Việc Tồn Đọng (<span id="count-pending">0</span>)
+                    </h2>
+                    <ul id="list-pending" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <li class="text-center text-slate-600 text-xs py-4">Đang đồng bộ...</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900/40 border border-slate-700/60 p-4 rounded-xl">
+                    <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i> Việc Đã Làm (<span id="count-completed">0</span>)
+                    </h2>
+                    <ul id="list-completed" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <li class="text-center text-slate-600 text-xs py-4">Đang đồng bộ...</li>
+                    </ul>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script>
-        // Thông số cấu hình Project Supabase của bạn
         const SUPABASE_URL = 'https://fcxwvevbsvzectiaacmb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjeHd2ZXZic3Z6ZWN0aWFhY21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTAzMDksImV4cCI6MjA5NTQ4NjMwOX0._380dtxl812Uq6ZgGM_mM0yjLVyhp7g205wuRnlwa_g';
         
-        // Khởi tạo thực thể Supabase Client
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const todoInput = document.getElementById('todo-input');
-        const todoList = document.getElementById('todo-list');
         const btnAdd = document.getElementById('btn-add');
+        const listPending = document.getElementById('list-pending');
+        const listCompleted = document.getElementById('list-completed');
+        const countPending = document.getElementById('count-pending');
+        const countCompleted = document.getElementById('count-completed');
 
-        // 1. HÀM TẢI (READ) DỮ LIỆU TỪ SUPABASE
+        // 1. HÀM ĐỌC VÀ PHÂN LOẠI DỮ LIỆU TỪ SUPABASE
         async function fetchTodos() {
             const { data, error } = await _supabase
                 .from('todos')
                 .select('*')
-                // Vì id của bạn dùng dạng UUID (chuỗi chữ và số), ta sắp xếp theo thời gian tạo tự động của hệ thống
                 .order('created_at', { ascending: true });
 
             if (error) {
-                console.error('Lỗi khi lấy dữ liệu:', error);
+                console.error('Lỗi tải dữ liệu:', error);
                 return;
             }
 
-            // Xóa trắng danh sách cũ để render mới
-            todoList.innerHTML = '';
+            // Xóa nội dung cũ trên giao diện
+            listPending.innerHTML = '';
+            listCompleted.innerHTML = '';
 
-            if(data.length === 0) {
-                todoList.innerHTML = `<li class="text-center text-slate-500 text-sm py-4">Tuyệt vời! Không có việc gì tồn đọng.</li>`;
-                return;
-            }
-
-            data.forEach(todo => {
-                const li = document.createElement('li');
-                li.className = "flex items-center justify-between bg-slate-900/60 border border-slate-700/50 p-4 rounded-xl";
-                
-                // ĐÃ SỬA: Thay thế toàn bộ biến todo.is_completed cũ bằng todo.status
-                li.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-slate-200">${todo.title}</span>
-                        <span class="text-xs bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-medium">${todo.status}</span>
-                    </div>
-                    <button onclick="deleteTodo('${todo.id}')" class="text-red-400 hover:text-red-500 p-1 cursor-pointer transition-colors">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                `;
-                todoList.appendChild(li);
-            });
-        }
-
-        // 2. HÀM THÊM (CREATE) DỮ LIỆU
-        async function addTodo() {
-            const title = todoInput.value.trim();
-            if (!title) return;
-			
-            const { error } = await _supabase
-                .from('todos')
-                .insert([{ title: title, status: "Mới" }]);
-
-            if (error) {
-                alert('Lỗi khi thêm: ' + error.message);
-            } else {
-                todoInput.value = '';
-                fetchTodos(); // Load lại danh sách sau khi thêm thành công
-            }
-        }
-
-        // 3. HÀM XÓA (DELETE) DỮ LIỆU
-        async function deleteTodo(id) {
-            const { error } = await _supabase
-                .from('todos')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                alert('Lỗi khi xóa: ' + error.message);
-            } else {
-                fetchTodos(); // Load lại danh sách sau khi xóa thành công
-            }
-        }
-
-        // Lắng nghe sự kiện người dùng tương tác
-        btnAdd.addEventListener('click', addTodo);
-        todoInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addTodo();
-        });
-
-        // Chạy ứng dụng load dữ liệu ngay khi mở trình duyệt
-        window.onload = fetchTodos;
-    </script>
-</body>
-</html>
+            let pending
