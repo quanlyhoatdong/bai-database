@@ -44,7 +44,7 @@
 
     <script>
         // ⚠️ CHÚ Ý: Học viên dán link URL nhận được từ Google Apps Script vào đây
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyU1P9Cb7g0UzJRxDRl_PaEQriZpcxggta1C37kIeGCV8CfjyFGsu3_JPaqw_PxukH_QQ/exec';
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwgskpCkBFmSsnxf4iUI__kdd-Qakw2gOS3Ojx7d5gY9oEpq4ALxnqQJhHXKfMOyjkEKA/exec';
 
         document.getElementById('feedback-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -62,26 +62,29 @@
                 message: document.getElementById('input-message').value
             };
 
-            try {
-                // Gọi API gửi dạng POST lên Google Script
-                await fetch(scriptURL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Chế độ này tránh lỗi bảo mật CORS chéo tên miền cho lớp căn bản
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
+			try {
+				// Gọi API gửi dạng POST lên Google Script
+				const response = await fetch(scriptURL, {
+					method: 'POST',
+					headers: { 
+						// Gửi dưới dạng văn bản thô để lách qua bộ chặn CORS của trình duyệt một cách an toàn
+						'Content-Type': 'text/plain;charset=utf-8' 
+					},
+					body: JSON.stringify(formData)
+				});
 
-                // Hiển thị thông báo thành công
-                statusMsg.className = "mt-4 text-center text-sm text-emerald-400 font-semibold";
-                statusMsg.innerText = "🎉 Gửi góp ý thành công! Dữ liệu đã ghi vào Sheet.";
-                statusMsg.classList.remove('hidden');
-                document.getElementById('feedback-form').reset();
+				// Hiển thị thông báo thành công
+				statusMsg.className = "mt-4 text-center text-sm text-emerald-400 font-semibold";
+				statusMsg.innerText = "🎉 Gửi góp ý thành công! Dữ liệu đã ghi vào Sheet.";
+				statusMsg.classList.remove('hidden');
+				document.getElementById('feedback-form').reset();
 
-            } catch (error) {
-                statusMsg.className = "mt-4 text-center text-sm text-red-400 font-semibold";
-                statusMsg.innerText = "❌ Có lỗi xảy ra, không thể gửi!";
-                statusMsg.classList.remove('hidden');
-                console.error('Lỗi kết nối:', error);
+			} catch (error) {
+				statusMsg.className = "mt-4 text-center text-sm text-red-400 font-semibold";
+				statusMsg.innerText = "❌ Có lỗi xảy ra, không thể kết nối API!";
+				statusMsg.classList.remove('hidden');
+				console.error('Lỗi kết nối:', error);
+			}
             } finally {
                 // Khôi phục nút bấm ban đầu
                 btnSubmit.disabled = false;
