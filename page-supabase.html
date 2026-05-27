@@ -82,11 +82,10 @@
         async function addTodo() {
             const title = todoInput.value.trim();
             if (!title) return;
-
-            const { error } = await _supabase
-                .from('todos')
-                .insert([{ title: title, is_completed: false }]);
-
+			
+			const { error } = await _supabase
+				.from('todos')
+				.insert([{ title: title, status: "Mới" }]); // Đổi thành 'status' theo đúng đề bài
             if (error) {
                 alert('Lỗi khi thêm: ' + error.message);
             } else {
