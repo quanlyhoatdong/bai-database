@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Database - Quotes App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between p-6">
+
+    <div class="max-w-2xl mx-auto w-full my-auto">
+        <a href="index.html" class="text-sm text-teal-400 hover:underline mb-6 inline-block">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại Dashboard
+        </a>
+
+        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl text-center relative overflow-hidden">
+            <div class="absolute top-4 right-6 text-slate-700 text-7xl font-serif">“</div>
+            
+            <h1 class="text-xl font-bold text-teal-400 mb-6 text-left border-b border-slate-700 pb-3 flex items-center gap-2">
+                <i class="fa-solid fa-quote-left"></i> Câu Nói Truyền Cảm Hứng (Dữ liệu từ JSON)
+            </h1>
+
+            <div id="quote-box" class="py-6">
+                <p id="quote-text" class="text-xl italic text-slate-200 mb-4">Đang tải dữ liệu dữ dội...</p>
+                <p id="quote-author" class="text-sm font-semibold text-teal-500">- Đang tải</p>
+            </div>
+
+            <button id="btn-next" class="mt-6 bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold px-6 py-2.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-2 text-sm shadow-lg shadow-teal-500/20">
+                <i class="fa-solid fa-shuffle"></i> Câu khác ngẫu nhiên
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let quotesData = [];
+
+        // Hàm đọc file JSON
+        async function loadQuotes() {
+            try {
+                const response = await fetch('data.json');
+                quotesData = await response.json();
+                showRandomQuote();
+            } catch (error) {
+                document.getElementById('quote-text').innerText = "Không thể load file JSON. Hãy kiểm tra lại đường dẫn!";
+                console.error("Lỗi:", error);
+            }
+        }
+
+        // Hàm hiển thị ngẫu nhiên 1 câu
+        function showRandomQuote() {
+            if (quotesData.length === 0) return;
+            const randomIndex = Math.floor(Math.random() * quotesData.length);
+            const item = quotesData[randomIndex];
+            
+            document.getElementById('quote-text').innerText = item.quote;
+            document.getElementById('quote-author').innerText = `- ${item.author}`;
+        }
+
+        // Sự kiện click nút
+        document.getElementById('btn-next').addEventListener('click', showRandomQuote);
+
+        // Chạy hàm load khi trang web mở lên
+        window.onload = loadQuotes;
+    </script>
+</body>
+</html>

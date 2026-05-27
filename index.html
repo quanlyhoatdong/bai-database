@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Database Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-height-screen flex flex-col justify-between p-6">
+
+    <header class="text-center my-10">
+        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 mb-2">
+            🧠 LỚP HỌC AI CĂN BẢN
+        </h1>
+        <p class="text-slate-400 text-lg">Hệ thống bài tập làm chủ Cơ sở dữ liệu cho Web App</p>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 my-auto w-full px-4">
+        
+        <a href="page-json.html" class="group bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-teal-500 transition-all duration-300 shadow-xl hover:-translate-y-2 flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-teal-500/10 text-teal-400 rounded-full flex items-center justify-center text-3xl mb-6 group-hover:bg-teal-500 group-hover:text-slate-900 transition-all duration-300">
+                <i class="fa-solid fa-file-code"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-3 text-slate-200">1. File JSON Tĩnh</h2>
+            <p class="text-slate-400 text-sm leading-relaxed">Ứng dụng xem "Danh ngôn truyền cảm hứng" bằng cách đọc file dữ liệu có sẵn trên hệ thống.</p>
+            <span class="mt-6 text-teal-400 text-sm font-semibold group-hover:underline">Khám phá ngay &rarr;</span>
+        </a>
+
+        <a href="page-sheets.html" class="group bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-emerald-500 transition-all duration-300 shadow-xl hover:-translate-y-2 flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center text-3xl mb-6 group-hover:bg-emerald-500 group-hover:text-slate-900 transition-all duration-300">
+                <i class="fa-solid fa-table"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-3 text-slate-200">2. Google Sheets API</h2>
+            <p class="text-slate-400 text-sm leading-relaxed">Trang thu thập ý kiến, biểu mẫu góp ý khóa học. Dữ liệu tự động đổ thẳng vào trang tính Excel đám mây.</p>
+            <span class="mt-6 text-emerald-400 text-sm font-semibold group-hover:underline">Khám phá ngay &rarr;</span>
+        </a>
+
+        <a href="page-supabase.html" class="group bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-sky-500 transition-all duration-300 shadow-xl hover:-translate-y-2 flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-sky-500/10 text-sky-400 rounded-full flex items-center justify-center text-3xl mb-6 group-hover:bg-sky-500 group-hover:text-slate-900 transition-all duration-300">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-3 text-slate-200">3. Supabase Cloud</h2>
+            <p class="text-slate-400 text-sm leading-relaxed">Ứng dụng Todo App (Quản lý việc cần làm) tương tác Realtime với hệ quản trị cơ sở dữ liệu chuyên nghiệp.</p>
+            <span class="mt-6 text-sky-400 text-sm font-semibold group-hover:underline">Khám phá ngay &rarr;</span>
+        </a>
+
+    </main>
+
+    <footer class="text-center text-slate-600 text-xs my-8 border-t border-slate-800 pt-4">
+        © 2026 Lớp Học AI Căn Bản - Học viên thực hành lắp ráp Database.
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets API - Form Feedback</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between p-6">
+
+    <div class="max-w-xl mx-auto w-full my-auto">
+        <a href="index.html" class="text-sm text-emerald-400 hover:underline mb-6 inline-block">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại Dashboard
+        </a>
+
+        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl">
+            <h1 class="text-xl font-bold text-emerald-400 mb-6 border-b border-slate-700 pb-3 flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Gửi Góp Ý Khóa Học (Lưu về Google Sheets)
+            </h1>
+
+            <form id="feedback-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Họ và Tên</label>
+                    <input type="text" id="input-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Email của bạn</label>
+                    <input type="email" id="input-email" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Ý kiến đóng góp</label>
+                    <textarea id="input-message" rows="4" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors"></textarea>
+                </div>
+
+                <button type="submit" id="btn-submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10">
+                    <i class="fa-solid fa-share-from-square"></i> Bấm để gửi góp ý
+                </button>
+            </form>
+
+            <div id="status-msg" class="mt-4 text-center text-sm hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ CHÚ Ý: Học viên dán link URL nhận được từ Google Apps Script vào đây
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyU1P9Cb7g0UzJRxDRl_PaEQriZpcxggta1C37kIeGCV8CfjyFGsu3_JPaqw_PxukH_QQ/exec';
+
+        document.getElementById('feedback-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btn-submit');
+            const statusMsg = document.getElementById('status-msg');
+            
+            // Thay đổi trạng thái nút khi đang gửi
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> Đang gửi lên Google Sheets...`;
+            
+            const formData = {
+                name: document.getElementById('input-name').value,
+                email: document.getElementById('input-email').value,
+                message: document.getElementById('input-message').value
+            };
+
+            try {
+                // Gọi API gửi dạng POST lên Google Script
+                await fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Chế độ này tránh lỗi bảo mật CORS chéo tên miền cho lớp căn bản
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                // Hiển thị thông báo thành công
+                statusMsg.className = "mt-4 text-center text-sm text-emerald-400 font-semibold";
+                statusMsg.innerText = "🎉 Gửi góp ý thành công! Dữ liệu đã ghi vào Sheet.";
+                statusMsg.classList.remove('hidden');
+                document.getElementById('feedback-form').reset();
+
+            } catch (error) {
+                statusMsg.className = "mt-4 text-center text-sm text-red-400 font-semibold";
+                statusMsg.innerText = "❌ Có lỗi xảy ra, không thể gửi!";
+                statusMsg.classList.remove('hidden');
+                console.error('Lỗi kết nối:', error);
+            } finally {
+                // Khôi phục nút bấm ban đầu
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Bấm để gửi góp ý`;
+            }
+        });
+    </script>
+</body>
+</html>
