@@ -25,6 +25,13 @@
                 <button id="btn-add" class="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-5 rounded-xl transition-all cursor-pointer shadow-lg shadow-sky-500/10">
                     <i class="fa-solid fa-plus"></i> Thêm việc
                 </button>
+                <button id="btn-test" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-4 rounded-xl transition-all cursor-pointer text-sm">
+                    <i class="fa-solid fa-flask"></i> Test
+                </button>
+            </div>
+
+            <div id="status" class="mb-4 p-3 rounded-lg bg-slate-900/50 border border-slate-700 text-xs text-slate-400">
+                <i class="fa-solid fa-spinner animate-spin mr-2"></i> Đang kết nối Supabase...
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -59,65 +66,85 @@
 
         const todoInput = document.getElementById('todo-input');
         const btnAdd = document.getElementById('btn-add');
+        const btnTest = document.getElementById('btn-test');
         const listPending = document.getElementById('list-pending');
         const listCompleted = document.getElementById('list-completed');
         const countPending = document.getElementById('count-pending');
         const countCompleted = document.getElementById('count-completed');
+        const statusEl = document.getElementById('status');
+
+        // HÀMCẬP NHẬT TRẠNG THÁI
+        function updateStatus(message, isError = false) {
+            statusEl.innerHTML = isError 
+                ? `<i class="fa-solid fa-exclamation-triangle mr-2 text-red-500"></i> ${message}`
+                : `<i class="fa-solid fa-check mr-2 text-emerald-500"></i> ${message}`;
+            console.log('[Status]', message);
+        }
 
         // 1. HÀM ĐỌC VÀ PHÂN LOẠI DỮ LIỆU TỪ SUPABASE
         async function fetchTodos() {
-            const { data, error } = await _supabase
-                .from('todos')
-                .select('*')
-                .order('created_at', { ascending: false });
+            try {
+                const { data, error } = await _supabase
+                    .from('todos')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            if (error) {
-                console.error('Lỗi tải dữ liệu:', error);
-                listPending.innerHTML = '<li class="text-center text-red-400 text-xs py-4">Lỗi tải dữ liệu!</li>';
-                return;
+                if (error) {
+                    console.error('Lỗi tải dữ liệu:', error);
+                    updateStatus(`Lỗi: ${error.message}`, true);
+                    listPending.innerHTML = '<li class="text-center text-red-400 text-xs py-4">❌ Lỗi tải dữ liệu!</li>';
+                    listCompleted.innerHTML = '';
+                    return;
+                }
+
+                console.log('Dữ liệu từ Supabase:', data);
+                updateStatus(`Đã tải ${data.length} công việc từ Supabase`);
+
+                // Phân loại công việc
+                const pendingTodos = data.filter(todo => !todo.is_completed);
+                const completedTodos = data.filter(todo => todo.is_completed);
+
+                // Cập nhật số lượng
+                countPending.textContent = pendingTodos.length;
+                countCompleted.textContent = completedTodos.length;
+
+                // Hiển thị công việc tồn đọng
+                listPending.innerHTML = pendingTodos.length === 0 
+                    ? '<li class="text-center text-slate-600 text-xs py-4">Không có việc cần làm 🎉</li>'
+                    : pendingTodos.map(todo => `
+                        <li class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between gap-3 group hover:border-amber-500/50 transition-all">
+                            <div class="flex items-center gap-3 flex-1">
+                                <button onclick="toggleTodo(${todo.id}, true)" class="text-amber-400 hover:text-amber-300 transition-colors">
+                                    <i class="fa-solid fa-circle text-lg"></i>
+                                </button>
+                                <span class="text-sm text-slate-200">${todo.title}</span>
+                            </div>
+                            <button onclick="deleteTodo(${todo.id})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all text-sm">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </li>
+                    `).join('');
+
+                // Hiển thị công việc đã làm
+                listCompleted.innerHTML = completedTodos.length === 0 
+                    ? '<li class="text-center text-slate-600 text-xs py-4">Chưa có việc hoàn thành</li>'
+                    : completedTodos.map(todo => `
+                        <li class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between gap-3 group hover:border-emerald-500/50 transition-all opacity-75">
+                            <div class="flex items-center gap-3 flex-1">
+                                <button onclick="toggleTodo(${todo.id}, false)" class="text-emerald-400 hover:text-emerald-300 transition-colors">
+                                    <i class="fa-solid fa-circle-check text-lg"></i>
+                                </button>
+                                <span class="text-sm text-slate-300 line-through">${todo.title}</span>
+                            </div>
+                            <button onclick="deleteTodo(${todo.id})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all text-sm">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </li>
+                    `).join('');
+            } catch (err) {
+                console.error('Lỗi không mong muốn:', err);
+                updateStatus(`Lỗi: ${err.message}`, true);
             }
-
-            // Phân loại công việc
-            const pendingTodos = data.filter(todo => !todo.is_completed);
-            const completedTodos = data.filter(todo => todo.is_completed);
-
-            // Cập nhật số lượng
-            countPending.textContent = pendingTodos.length;
-            countCompleted.textContent = completedTodos.length;
-
-            // Hiển thị công việc tồn đọng
-            listPending.innerHTML = pendingTodos.length === 0 
-                ? '<li class="text-center text-slate-600 text-xs py-4">Không có việc cần làm 🎉</li>'
-                : pendingTodos.map(todo => `
-                    <li class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between gap-3 group hover:border-amber-500/50 transition-all">
-                        <div class="flex items-center gap-3 flex-1">
-                            <button onclick="toggleTodo(${todo.id}, true)" class="text-amber-400 hover:text-amber-300 transition-colors">
-                                <i class="fa-solid fa-circle text-lg"></i>
-                            </button>
-                            <span class="text-sm text-slate-200">${todo.title}</span>
-                        </div>
-                        <button onclick="deleteTodo(${todo.id})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all text-sm">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </li>
-                `).join('');
-
-            // Hiển thị công việc đã làm
-            listCompleted.innerHTML = completedTodos.length === 0 
-                ? '<li class="text-center text-slate-600 text-xs py-4">Chưa có việc hoàn thành</li>'
-                : completedTodos.map(todo => `
-                    <li class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex items-center justify-between gap-3 group hover:border-emerald-500/50 transition-all opacity-75">
-                        <div class="flex items-center gap-3 flex-1">
-                            <button onclick="toggleTodo(${todo.id}, false)" class="text-emerald-400 hover:text-emerald-300 transition-colors">
-                                <i class="fa-solid fa-circle-check text-lg"></i>
-                            </button>
-                            <span class="text-sm text-slate-300 line-through">${todo.title}</span>
-                        </div>
-                        <button onclick="deleteTodo(${todo.id})" class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all text-sm">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </li>
-                `).join('');
         }
 
         // 2. HÀM THÊM CÔNG VIỆC MỚI
@@ -130,7 +157,7 @@
 
             if (error) {
                 console.error('Lỗi thêm công việc:', error);
-                alert('Lỗi khi thêm công việc!');
+                alert('Lỗi khi thêm công việc!\n\n' + error.message);
             } else {
                 todoInput.value = '';
                 fetchTodos();
@@ -168,21 +195,59 @@
             }
         }
 
+        // TEST: Thêm dữ liệu mẫu
+        async function addSampleTodos() {
+            const samples = [
+                'Hoàn thành bài tập JavaScript',
+                'Học về Supabase',
+                'Tạo giao diện Todo App',
+                'Kiểm tra lỗi và debug'
+            ];
+
+            for (const title of samples) {
+                const { error } = await _supabase.from('todos').insert([{ 
+                    title, 
+                    is_completed: false 
+                }]);
+                if (error) console.error(error);
+            }
+            fetchTodos();
+        }
+
         // 5. THEO DÕI THAY ĐỔI REAL-TIME TỪ SUPABASE
-        _supabase
-            .channel('todos')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, () => {
-                fetchTodos();
-            })
-            .subscribe();
+        try {
+            _supabase
+                .channel('todos')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, (payload) => {
+                    console.log('Real-time update:', payload);
+                    fetchTodos();
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Real-time subscription active');
+                    }
+                });
+        } catch (err) {
+            console.error('Lỗi subscribe real-time:', err);
+        }
 
         // 6. SỰ KIỆN NÚT THÊM
         btnAdd.addEventListener('click', () => addTodo(todoInput.value));
         todoInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addTodo(todoInput.value);
         });
+        
+        // NÚT TEST
+        btnTest.addEventListener('click', async () => {
+            btnTest.disabled = true;
+            btnTest.textContent = '⏳ Thêm dữ liệu...';
+            await addSampleTodos();
+            btnTest.disabled = false;
+            btnTest.innerHTML = '<i class="fa-solid fa-flask"></i> Test';
+        });
 
         // 7. KHỞI ĐỘNG - TẢI DỮ LIỆU KHI MỞ TRANG
+        console.log('🚀 Ứng dụng đang khởi động...');
         fetchTodos();
     </script>
 
