@@ -381,15 +381,33 @@
                 console.log('Test 1: Supabase client:', _supabase);
                 
                 // Test 2: Thử lấy dữ liệu từ bảng todos
-                console.log('Test 2: Lấy dữ liệu từ bảng todos...');
-                const { data, error } = await _supabase.from('todos').select('*').limit(1);
+                console.log('Test 2: Lấy dữ liệu từ bảng "todos"...');
+                let { data, error } = await _supabase.from('todos').select('*').limit(5);
                 
                 if (error) {
-                    console.error('❌ Error:', error);
-                    debugDataEl.innerHTML = `<strong style="color: red;">❌ Lỗi kết nối:</strong><br>${JSON.stringify(error, null, 2)}`;
+                    console.error('❌ Error from "todos":', error);
+                    
+                    // Thử các tên bảng khác
+                    console.log('Test 3: Thử các tên bảng khác...');
+                    const tableNames = ['todo', 'Task', 'tasks', 'work', 'jobs'];
+                    
+                    for (const tableName of tableNames) {
+                        const { data: testData, error: testError } = await _supabase.from(tableName).select('*').limit(1);
+                        if (!testError) {
+                            console.log(`✅ Tìm thấy bảng "${tableName}":`, testData);
+                            debugDataEl.innerHTML = `<strong style="color: green;">✅ Tìm thấy bảng: "${tableName}"</strong><br>Dữ liệu: ${JSON.stringify(testData, null, 2)}`;
+                            return;
+                        }
+                    }
+                    
+                    debugDataEl.innerHTML = `<strong style="color: red;">❌ Lỗi:</strong><br>Không tìm thấy bảng "todos"<br>Error: ${JSON.stringify(error, null, 2)}<br><br>🔧 Các bảng để thử: todo, Task, tasks, work, jobs<br><br>💡 Hoặc kiểm tra RLS permissions`;
                 } else {
-                    console.log('✅ Success! Data:', data);
-                    debugDataEl.innerHTML = `<strong style="color: green;">✅ Kết nối thành công!</strong><br>Dữ liệu: ${JSON.stringify(data, null, 2)}`;
+                    console.log('✅ Success! Data từ "todos":', data);
+                    if (data.length === 0) {
+                        debugDataEl.innerHTML = `<strong style="color: orange;">⚠️ Bảng "todos" tồn tại nhưng trống!</strong><br>Số bản ghi: 0<br><br>💡 Có thể là:<br>1. RLS chặn quyền đọc<br>2. Dữ liệu đã bị xóa<br>3. Cần thêm dữ liệu mẫu`;
+                    } else {
+                        debugDataEl.innerHTML = `<strong style="color: green;">✅ Tìm thấy ${data.length} bản ghi!</strong><br>Dữ liệu: ${JSON.stringify(data, null, 2)}`;
+                    }
                 }
             } catch (err) {
                 console.error('❌ Exception:', err);
