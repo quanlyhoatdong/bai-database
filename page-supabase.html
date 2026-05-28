@@ -28,6 +28,9 @@
                 <button id="btn-test" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-4 rounded-xl transition-all cursor-pointer text-sm">
                     <i class="fa-solid fa-flask"></i> Test
                 </button>
+                <button id="btn-debug" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-4 rounded-xl transition-all cursor-pointer text-sm">
+                    <i class="fa-solid fa-bug"></i> Debug
+                </button>
             </div>
 
             <div id="status" class="mb-4 p-3 rounded-lg bg-slate-900/50 border border-slate-700 text-xs text-slate-400">
@@ -66,11 +69,16 @@
         const SUPABASE_URL = 'https://fcxwvevbsvzectiaacmb.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjeHd2ZXZic3Z6ZWN0aWFhY21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MTAzMDksImV4cCI6MjA5NTQ4NjMwOX0._380dtxl812Uq6ZgGM_mM0yjLVyhp7g205wuRnlwa_g';
         
+        console.log('🚀 Khởi tạo Supabase client...');
+        console.log('URL:', SUPABASE_URL);
+        
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✅ Supabase client created:', _supabase);
 
         const todoInput = document.getElementById('todo-input');
         const btnAdd = document.getElementById('btn-add');
         const btnTest = document.getElementById('btn-test');
+        const btnDebug = document.getElementById('btn-debug');
         const listPending = document.getElementById('list-pending');
         const listCompleted = document.getElementById('list-completed');
         const countPending = document.getElementById('count-pending');
@@ -108,25 +116,39 @@
         // 1. HÀM ĐỌC VÀ PHÂN LOẠI DỮ LIỆU TỪ SUPABASE
         async function fetchTodos() {
             try {
+                console.log('🔄 Đang tải dữ liệu từ Supabase...');
+                
                 const { data, error } = await _supabase
                     .from('todos')
                     .select('*')
                     .order('created_at', { ascending: false });
 
+                console.log('Response from Supabase:', { data, error });
+
                 if (error) {
-                    console.error('Lỗi tải dữ liệu:', error);
-                    updateStatus(`Lỗi: ${error.message}`, true);
+                    console.error('❌ Lỗi tải dữ liệu:', error);
+                    updateStatus(`❌ Lỗi: ${error.message}`, true);
+                    debugDataEl.innerHTML = `<strong style="color: red;">Lỗi từ Supabase:</strong><br>${JSON.stringify(error, null, 2)}`;
                     listPending.innerHTML = '<li class="text-center text-red-400 text-xs py-4">❌ Lỗi tải dữ liệu!</li>';
                     listCompleted.innerHTML = '';
                     return;
                 }
 
-                console.log('Dữ liệu từ Supabase:', data);
-                console.log('Số lượng bản ghi:', data.length);
-                if (data.length > 0) {
-                    console.log('Cấu trúc dữ liệu (item đầu tiên):', data[0]);
-                    console.log('Các fields có sẵn:', Object.keys(data[0]));
+                if (!data) {
+                    console.warn('⚠️ Data is null');
+                    updateStatus('❌ Data is null từ Supabase', true);
+                    debugDataEl.innerHTML = '⚠️ Data is null - có thể là lỗi kết nối hoặc phân quyền';
+                    return;
                 }
+
+                console.log('✅ Dữ liệu từ Supabase:', data);
+                console.log('📊 Số lượng bản ghi:', data.length);
+                
+                if (data.length > 0) {
+                    console.log('📋 Cấu trúc dữ liệu (item đầu tiên):', data[0]);
+                    console.log('🔑 Các fields có sẵn:', Object.keys(data[0]));
+                }
+                
                 showDebugData(data);
                 updateStatus(`✅ Đã tải ${data.length} công việc từ Supabase`);
 
@@ -183,14 +205,14 @@
                 }
 
                 // Kiểm tra dữ liệu trong field này
-                console.log('Giá trị field "' + completedField + '" trong các items:');
+                console.log('Giá trị field "' + window.completedField + '" trong các items:');
                 data.slice(0, 3).forEach((item, idx) => {
-                    console.log(`  Item ${idx}: ${completedField} =`, item[completedField]);
+                    console.log(`  Item ${idx}: ${window.completedField} =`, item[window.completedField]);
                 });
 
                 // Phân loại công việc
                 const pendingTodos = data.filter(todo => {
-                    const val = todo[completedField];
+                    const val = todo[window.completedField];
                     // Nếu là status string, so sánh với pendingValue
                     if (typeof val === 'string') {
                         return val === (window.pendingValue || 'Mới');
@@ -350,6 +372,31 @@
             fetchTodos();
         }
 
+        // DEBUG: Kiểm tra kết nối trực tiếp
+        async function debugConnection() {
+            console.log('🔍 DEBUG: Kiểm tra kết nối Supabase...');
+            
+            try {
+                // Test 1: Kiểm tra client
+                console.log('Test 1: Supabase client:', _supabase);
+                
+                // Test 2: Thử lấy dữ liệu từ bảng todos
+                console.log('Test 2: Lấy dữ liệu từ bảng todos...');
+                const { data, error } = await _supabase.from('todos').select('*').limit(1);
+                
+                if (error) {
+                    console.error('❌ Error:', error);
+                    debugDataEl.innerHTML = `<strong style="color: red;">❌ Lỗi kết nối:</strong><br>${JSON.stringify(error, null, 2)}`;
+                } else {
+                    console.log('✅ Success! Data:', data);
+                    debugDataEl.innerHTML = `<strong style="color: green;">✅ Kết nối thành công!</strong><br>Dữ liệu: ${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (err) {
+                console.error('❌ Exception:', err);
+                debugDataEl.innerHTML = `<strong style="color: red;">❌ Exception:</strong><br>${JSON.stringify(err, null, 2)}`;
+            }
+        }
+
         // 5. THEO DÕI THAY ĐỔI REAL-TIME TỪ SUPABASE
         try {
             _supabase
@@ -380,6 +427,15 @@
             await addSampleTodos();
             btnTest.disabled = false;
             btnTest.innerHTML = '<i class="fa-solid fa-flask"></i> Test';
+        });
+
+        // NÚT DEBUG
+        btnDebug.addEventListener('click', async () => {
+            btnDebug.disabled = true;
+            btnDebug.textContent = '⏳ Kiểm tra...';
+            await debugConnection();
+            btnDebug.disabled = false;
+            btnDebug.innerHTML = '<i class="fa-solid fa-bug"></i> Debug';
         });
 
         // 7. KHỞI ĐỘNG - TẢI DỮ LIỆU KHI MỞ TRANG
