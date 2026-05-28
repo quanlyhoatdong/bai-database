@@ -79,7 +79,9 @@
         const debugDataEl = document.getElementById('debug-data');
 
         // Biến global lưu trữ tên field cho trạng thái hoàn thành
-        let completedField = 'is_completed';
+        let completedField = 'status';
+        let completedValue = 'Hoàn thành';
+        let pendingValue = 'Mới';
 
         // HÀMCẬP NHẬT TRẠNG THÁI
         function updateStatus(message, isError = false) {
@@ -140,27 +142,45 @@
                 // Kiểm tra field có sẵn để xác định trạng thái hoàn thành
                 const firstItem = data[0];
                 const allKeys = Object.keys(firstItem);
-                console.log('🔍 Tìm field cho trạng thái hoàn thành...');
+                console.log('🔍 Tìm field cho trạng thái...');
                 console.log('Available fields:', allKeys);
 
-                // Thử tìm field có tên liên quan đến hoàn thành
-                let completedField = allKeys.find(key => 
-                    key.toLowerCase().includes('complet') || 
-                    key.toLowerCase().includes('done') || 
-                    key.toLowerCase().includes('finish') ||
-                    key.toLowerCase().includes('status')
-                );
-
-                // Nếu không tìm được, sử dụng mặc định
-                if (!completedField) {
-                    completedField = 'is_completed';
-                    console.warn('⚠️ Không tìm thấy field, sử dụng:', completedField);
+                // Kiếm field có tên là "status"
+                let statusField = allKeys.find(key => key.toLowerCase() === 'status');
+                
+                if (statusField) {
+                    console.log('✅ Tìm thấy field "status":', statusField);
+                    window.completedField = statusField;
+                    
+                    // Lấy các giá trị duy nhất của status
+                    const statusValues = [...new Set(data.map(item => item[statusField]))];
+                    console.log('Các giá trị status có sẵn:', statusValues);
+                    
+                    // Xác định giá trị cho "hoàn thành" và "chưa hoàn thành"
+                    if (statusValues.includes('Hoàn thành')) {
+                        window.completedValue = 'Hoàn thành';
+                        window.pendingValue = 'Mới';
+                    } else {
+                        // Tự động phát hiện
+                        window.completedValue = statusValues[0];
+                        window.pendingValue = statusValues[statusValues.length - 1];
+                    }
+                    console.log('Pending value:', window.pendingValue);
+                    console.log('Completed value:', window.completedValue);
                 } else {
-                    console.log('✅ Tìm thấy field:', completedField);
+                    // Fallback sang boolean field
+                    let booleanField = allKeys.find(key => 
+                        key.toLowerCase().includes('complet') || 
+                        key.toLowerCase().includes('done')
+                    );
+                    if (booleanField) {
+                        window.completedField = booleanField;
+                        console.log('✅ Sử dụng field boolean:', booleanField);
+                    } else {
+                        window.completedField = 'is_completed';
+                        console.warn('⚠️ Không tìm thấy field phù hợp, sử dụng mặc định');
+                    }
                 }
-
-                // Cập nhật global variable
-                window.completedField = completedField;
 
                 // Kiểm tra dữ liệu trong field này
                 console.log('Giá trị field "' + completedField + '" trong các items:');
@@ -171,11 +191,21 @@
                 // Phân loại công việc
                 const pendingTodos = data.filter(todo => {
                     const val = todo[completedField];
-                    return !val; // false, null, undefined, 0, empty string
+                    // Nếu là status string, so sánh với pendingValue
+                    if (typeof val === 'string') {
+                        return val === (window.pendingValue || 'Mới');
+                    }
+                    // Nếu là boolean, lấy false
+                    return !val;
                 });
                 const completedTodos = data.filter(todo => {
-                    const val = todo[completedField];
-                    return !!val; // true, non-zero, non-empty
+                    const val = todo[window.completedField];
+                    // Nếu là status string, so sánh với completedValue
+                    if (typeof val === 'string') {
+                        return val === (window.completedValue || 'Hoàn thành');
+                    }
+                    // Nếu là boolean, lấy true
+                    return !!val;
                 });
 
                 // Cập nhật số lượng
@@ -226,7 +256,17 @@
             if (!title.trim()) return;
 
             const insertData = { title: title.trim() };
-            insertData[window.completedField || 'is_completed'] = false;
+            const field = window.completedField || 'status';
+            
+            // Nếu dùng status string, set mặc định là "Mới"
+            if (window.pendingValue) {
+                insertData[field] = window.pendingValue;
+            } else {
+                // Nếu dùng boolean
+                insertData[field] = false;
+            }
+
+            console.log('Thêm công việc mới:', insertData);
 
             const { error } = await _supabase
                 .from('todos')
@@ -242,9 +282,19 @@
         }
 
         // 3. HÀM THAY ĐỔI TRẠNG THÁI CÔNG VIỆC
-        async function toggleTodo(id, newStatus) {
+        async function toggleTodo(id, isComplete) {
             const updateData = {};
-            updateData[window.completedField || 'is_completed'] = newStatus;
+            const field = window.completedField || 'status';
+            
+            // Nếu dùng status string
+            if (window.completedValue && window.pendingValue) {
+                updateData[field] = isComplete ? window.completedValue : window.pendingValue;
+            } else {
+                // Nếu dùng boolean
+                updateData[field] = isComplete;
+            }
+
+            console.log('Cập nhật:', { id, updateData });
 
             const { error } = await _supabase
                 .from('todos')
@@ -285,9 +335,17 @@
             ];
 
             for (const title of samples) {
-                const { error } = await _supabase.from('todos').insert([{ 
-                    title, 
-                    is_completed: false 
+                const insertData = { title };
+                const field = window.completedField || 'status';
+                
+                if (window.pendingValue) {
+                    insertData[field] = window.pendingValue;
+                } else {
+                    insertData[field] = false;
+                }
+
+                const { error } = await _supabase.from('todos').insert([insertData]);
+                if (error) console.error(error); 
                 }]);
                 if (error) console.error(error);
             }
