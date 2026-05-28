@@ -177,8 +177,8 @@
                         window.completedField = booleanField;
                         console.log('✅ Sử dụng field boolean:', booleanField);
                     } else {
-                        window.completedField = 'is_completed';
-                        console.warn('⚠️ Không tìm thấy field phù hợp, sử dụng mặc định');
+                        window.completedField = 'status';
+                        console.warn('⚠️ Không tìm thấy field phù hợp, sử dụng mặc định: status');
                     }
                 }
 
@@ -345,8 +345,6 @@
                 }
 
                 const { error } = await _supabase.from('todos').insert([insertData]);
-                if (error) console.error(error); 
-                }]);
                 if (error) console.error(error);
             }
             fetchTodos();
